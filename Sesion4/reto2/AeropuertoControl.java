@@ -1,30 +1,40 @@
 package Sesion4.reto2;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
 
 public class AeropuertoControl {
 
-    public CompletableFuture<Void> procesarAterrizaje() {
+    public static void main(String[] args) {
         System.out.println("Verificando condiciones para aterrizaje...\n");
 
-        CompletableFuture<Boolean> pista = ServicioVerificacion.verificarPista();
-        CompletableFuture<Boolean> clima = ServicioVerificacion.verificarClima();
-        CompletableFuture<Boolean> trafico = ServicioVerificacion.verificarTraficoAereo();
-        CompletableFuture<Boolean> personal = ServicioVerificacion.verificarPersonalTierra();
+        CompletableFuture<Boolean> pista = VerificadorServicio.verificarPista();
+        CompletableFuture<Boolean> clima = VerificadorServicio.verificarClima();
+        CompletableFuture<Boolean> trafico = VerificadorServicio.verificarTraficoAereo();
+        CompletableFuture<Boolean> personal = VerificadorServicio.verificarPersonalTierra();
 
-        return CompletableFuture.allOf(pista, clima, trafico, personal)
-                .thenApply(v -> pista.join() && clima.join() && trafico.join() && personal.join())
-                .thenAccept(condicionesOptimas -> {
-                    if (condicionesOptimas) {
+        CompletableFuture.allOf(pista, clima, trafico, personal)
+            .thenRun(() -> {
+                try {
+                    boolean condicionesOk = pista.get() && clima.get() && trafico.get() && personal.get();
+
+                    if (condicionesOk) {
                         System.out.println("\nAterrizaje autorizado: todas las condiciones óptimas.");
                     } else {
                         System.out.println("\nAterrizaje denegado: condiciones no óptimas.");
                     }
-                })
-                .exceptionally(ex -> {
-                    System.out.println("\nError durante el proceso de verificación: " + ex.getMessage());
-                    return null;
-                });
+
+                } catch (Exception e) {
+                    System.out.println("\nError al procesar las verificaciones: " + e.getMessage());
+                }
+            })
+            .exceptionally(ex -> {
+                System.out.println("\nError general: " + ex.getMessage());
+                return null;
+            })
+            .join(); 
+
+        System.out.println("\nProceso finalizado.");
     }
 }
+
 

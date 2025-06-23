@@ -1,56 +1,47 @@
 package Sesion4.reto1;
 
 import java.util.concurrent.*;
-import java.util.Random;
-
 public class MovilidadApp {
 
-    private static final Random random = new Random();
-
-    public static CompletableFuture<String> calcularRuta() {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                System.out.println("Buscando la mejor ruta...");
-                TimeUnit.SECONDS.sleep(2 + random.nextInt(2)); 
-                return "Ruta: Parque Central -> Estación Sur";
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Error al calcular ruta", e);
-            }
-        });
-    }
-
-    public static CompletableFuture<Double> estimarTarifa() {
-        return CompletableFuture.supplyAsync(() -> {
-            try {
-                System.out.println("Calculando tarifa estimada...");
-                TimeUnit.SECONDS.sleep(1 + random.nextInt(2)); 
-                if (random.nextInt(10) < 1) {
-                    throw new RuntimeException("Demanda muy alta, no se pudo calcular la tarifa.");
-                }
-                return 92.75;
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Error al estimar tarifa", e);
-            }
-        });
-    }
-
     public static void main(String[] args) {
-        System.out.println("Solicitud de viaje recibida...\n");
+        System.out.println("Iniciando simulación de viaje...\n");
 
         CompletableFuture<String> rutaFuture = calcularRuta();
         CompletableFuture<Double> tarifaFuture = estimarTarifa();
 
         rutaFuture
             .thenCombine(tarifaFuture, (ruta, tarifa) -> {
-                return ruta + " | Tarifa estimada: $" + tarifa;
+                return "Ruta calculada: " + ruta + " | Tarifa estimada: $" + tarifa;
             })
-            .exceptionally(ex -> "Error en el proceso del viaje: " + ex.getMessage())
+            .exceptionally(ex -> {
+                return "Error al procesar la solicitud: " + ex.getMessage();
+            })
             .thenAccept(System.out::println);
+        dormir(5);
+        System.out.println("\nFin del procesamiento asincrónico.");
+    }
 
+    public static CompletableFuture<String> calcularRuta() {
+        return CompletableFuture.supplyAsync(() -> {
+            System.out.println("Calculando ruta...");
+            dormir(2 + (int)(Math.random() * 2)); 
+            return "Centro -> Norte";
+        });
+    }
+
+    public static CompletableFuture<Double> estimarTarifa() {
+        return CompletableFuture.supplyAsync(() -> {
+            System.out.println("Estimando tarifa...");
+            dormir(1 + (int)(Math.random() * 2)); 
+            return 75.50;
+        });
+    }
+
+    private static void dormir(int segundos) {
         try {
-            TimeUnit.SECONDS.sleep(5);
+            TimeUnit.SECONDS.sleep(segundos);
         } catch (InterruptedException e) {
-            System.err.println("Interrumpido.");
+            Thread.currentThread().interrupt();
         }
     }
 }
